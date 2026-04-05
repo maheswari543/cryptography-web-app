@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Cryptography Lab</title>
+
+<style>
+body{margin:0;display:flex;background:#0a0a0a;color:#00ffcc;font-family:Arial;}
+
+.sidebar{width:220px;background:#111;height:100vh;padding-top:20px;}
+.sidebar button{
+width:100%;padding:15px;background:none;color:#00ffcc;border:none;cursor:pointer;
+}
+.sidebar button:hover{background:#00ffcc;color:black;}
+
+.main{flex:1;padding:30px;text-align:center;}
+
+.card{
+background:#111;padding:20px;border-radius:10px;width:500px;margin:auto;
+box-shadow:0 0 20px #00ffcc;
+}
+
+label{display:block;text-align:left;margin-top:10px;}
+
+input,textarea,select{
+width:90%;padding:10px;margin:8px;border:none;border-radius:5px;
+}
+
+button{padding:10px;margin:5px;background:#00ffcc;border:none;border-radius:5px;cursor:pointer;}
+.copy{background:#00ccff;}
+.hidden{display:none;}
+
+.optionBtn{
+display:block;width:90%;margin:5px auto;background:#222;color:#00ffcc;
+transition:0.3s;
+}
+.optionBtn:hover{background:#00ffcc;color:black;}
+</style>
+</head>
+
+<body onload="init()">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+<button onclick="show('enc')">Encryption</button>
+<button onclick="show('dec')">Decryption</button>
+<button onclick="show('notes')">Notes</button>
+<button onclick="show('quiz')">Quiz</button>
+</div>
+
+<div class="main">
+<h1>🛡 Cryptography Lab</h1>
+
+<!-- ENCRYPT -->
+<div id="enc" class="card">
+<h2>Encryption</h2>
+
+<select id="algoE" onchange="fields('E')">
+<option value="caesar">Caesar Cipher</option>
+<option value="sub">Substitution Cipher</option>
+<option value="hill">Hill Cipher</option>
+<option value="des">DES</option>
+<option value="blow">Blowfish</option>
+<option value="aes">AES</option>
+<option value="rsa">RSA</option>
+<option value="dh">Diffie-Hellman</option>
+</select>
+
+<div id="fE"></div>
+
+<button onclick="encrypt()">Encrypt</button>
+<button class="copy" onclick="copy('outE')">Copy</button>
+
+<p id="outE"></p>
+</div>
+
+<!-- DECRYPT -->
+<div id="dec" class="card hidden">
+<h2>Decryption</h2>
+
+<select id="algoD" onchange="fields('D')">
+<option value="caesar">Caesar Cipher</option>
+<option value="sub">Substitution Cipher</option>
+<option value="hill">Hill Cipher</option>
+<option value="des">DES</option>
+<option value="blow">Blowfish</option>
+<option value="aes">AES</option>
+<option value="rsa">RSA</option>
+<option value="dh">Diffie-Hellman</option>
+</select>
+
+<div id="fD"></div>
+
+<button onclick="decrypt()">Decrypt</button>
+<button class="copy" onclick="copy('outD')">Copy</button>
+
+<p id="outD"></p>
+</div>
+
+<!-- NOTES -->
+<div id="notes" class="card hidden" style="text-align:left;max-height:80vh;overflow:auto;">
+<h2>📘 Detailed Cryptography Notes</h2>
+
+<p><b>What is Cryptography?</b><br>
+Cryptography is the technique of securing communication by converting readable data (Plain Text) into an unreadable format (Cipher Text).</p>
+
+<p><b>Importance:</b><br>
+• Protects data<br>
+• Ensures privacy<br>
+• Used in banking and security systems</p>
+
+<p><b>Types:</b><br>
+1. Classical → Caesar, Substitution, Hill<br>
+2. Symmetric → AES, DES, Blowfish<br>
+3. Asymmetric → RSA, Diffie-Hellman</p>
+
+<p><b>Process:</b><br>
+Plain Text → Encryption → Cipher Text → Decryption → Original Text</p>
+
+<p><b>Algorithms:</b></p>
+<ul>
+<li>Caesar → Shift letters</li>
+<li>Substitution → Replace letters</li>
+<li>Hill → Matrix method</li>
+<li>DES → Old encryption</li>
+<li>Blowfish → Fast secure</li>
+<li>AES → Modern standard</li>
+<li>RSA → Public/private keys</li>
+<li>Diffie-Hellman → Key exchange</li>
+</ul>
+
+<p><b>Applications:</b><br>
+Banking, passwords, communication security.</p>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="card hidden">
+<h2>🧠 Quiz</h2>
+
+<div id="quizBox"></div>
+
+<button onclick="submitQuiz()">Submit</button>
+<button onclick="nextQuiz()">Next Quiz</button>
+
+<p id="quizResult"></p>
+</div>
+
+</div>
+
+<script>
+
+// NAV
+function show(x){
+["enc","dec","notes","quiz"].forEach(i=>document.getElementById(i).classList.add("hidden"));
+document.getElementById(x).classList.remove("hidden");
+}
+
+// INPUT FIELDS
+function fields(type){
+let a=document.getElementById("algo"+type).value;
+let f=document.getElementById("f"+type);
+
+let label = type==="E"?"Plain Text":"Cipher Text";
+let base = `<label>${label}</label><textarea id="t${type}"></textarea>`;
+
+if(a=="caesar") f.innerHTML=base+`<label>Shift Value</label><input id="k${type}">`;
+else if(a=="sub") f.innerHTML=base+`<label>Substitution Alphabet</label><input id="k${type}">`;
+else if(a=="hill") f.innerHTML=base+`<label>Matrix</label><input id="m${type}">`;
+else if(a=="des"||a=="blow") f.innerHTML=base+`<label>Secret Key</label><input id="k${type}">`;
+else if(a=="aes") f.innerHTML=base+`<label>Passphrase</label><input id="k${type}">`;
+else if(a=="rsa") f.innerHTML=base+`<label>Primes (p,q)</label><input id="k${type}">`;
+else if(a=="dh") f.innerHTML=base+`
+<label>p</label><input id="p${type}">
+<label>q</label><input id="q${type}">
+<label>a</label><input id="a${type}">
+<label>b</label><input id="b${type}">`;
+}
+
+// ENCRYPT / DECRYPT
+function encrypt(){ outE.innerText=btoa(document.getElementById("tE").value); }
+function decrypt(){ outD.innerText=atob(document.getElementById("tD").value); }
+
+// COPY
+function copy(id){
+navigator.clipboard.writeText(document.getElementById(id).innerText);
+alert("Copied!");
+}
+
+// QUIZ
+let quizData=[
+["AES is?","Symmetric","Asymmetric",0],
+["RSA uses?","One key","Two keys",1],
+["Hill uses?","Matrix","Numbers",0],
+["DES is?","Old","New",0],
+["Blowfish is?","Fast","Slow",0],
+["Crypto purpose?","Security","Games",0],
+["RSA type?","Symmetric","Asymmetric",1],
+["AES key?","Single","Double",0],
+["DH used for?","Key exchange","Encryption",0],
+["Cipher text is?","Encrypted","Plain",0],
+["Plain text is?","Readable","Hidden",0],
+["Encryption means?","Lock","Open",0],
+["AES size?","128+","10",0],
+["DES bits?","56","10",0],
+["RSA uses?","Prime","Even",0],
+["Blowfish type?","Symmetric","Asymmetric",0],
+["DH type?","Exchange","Hash",0],
+["Crypto goal?","Security","Fun",0],
+["Cipher is?","Encoded","Normal",0],
+["Hill needs?","Matrix","Shift",0]
+];
+
+let index=0,score=0,round=1,answers=[];
+
+function loadQuiz(){
+answers=[];
+let html="";
+for(let i=0;i<2;i++){
+let q=quizData[index+i];
+html+=`<p>${i+1}. ${q[0]}</p>
+<button class="optionBtn" onclick="selectAns(${i},0,this)">${q[1]}</button>
+<button class="optionBtn" onclick="selectAns(${i},1,this)">${q[2]}</button>`;
+}
+quizBox.innerHTML=html;
+quizResult.innerText=`Round ${round}/10 | Score: ${score}`;
+}
+
+function selectAns(i,val,btn){
+answers[i]=val;
+let allBtns=btn.parentElement.querySelectorAll("button");
+allBtns.forEach(b=>{
+b.style.background="#222";
+b.style.color="#00ffcc";
+});
+btn.style.background="#00ffcc";
+btn.style.color="black";
+btn.style.fontWeight="bold";
+btn.style.boxShadow="0 0 10px #00ffcc";
+}
+
+function submitQuiz(){
+let roundScore=0;
+for(let i=0;i<answers.length;i++){
+let q=quizData[index+i];
+if(answers[i]==q[3]){score++;roundScore++;}
+}
+quizResult.innerText=`Round ${round} Score: ${roundScore}/2 | Total: ${score}`;
+}
+
+function nextQuiz(){
+if(round>=10){
+let msg=score>=15?"Excellent 🔥":score>=10?"Good 👍":"Bad 😅";
+quizResult.innerText=`Final Score: ${score}/20 → ${msg}`;
+return;
+}
+round++; index+=2; loadQuiz();
+}
+
+function init(){
+fields('E');
+fields('D');
+loadQuiz();
+}
+</script>
+
+</body>
+</html>
